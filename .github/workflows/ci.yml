@@ -32,15 +32,23 @@ jobs:
           echo "Simulando um docker build"
           # docker build -t minha-imagem:latest .
       
-      - name: Build and Push
+      - name: Build and Push with Cache
         run: |
-          # Substitua 'seu-usuario' pelo seu login do Docker Hub ou use uma variável
-          # Aqui estamos definindo o nome da imagem seguindo o padrão do Docker Hub
-          IMAGE_NAME=${{ secrets.DOCKER_USER }}/meu-projeto-docker
+          # 1. Define o nome da imagem (ajuste 'meu-app' para o nome do seu repositório)
+          IMAGE_NAME=${{ secrets.DOCKER_USER }}/meu-app
 
-          # Build com as duas tags (SHA do commit e Latest)
-          docker build -t $IMAGE_NAME:${{ github.sha }} -t $IMAGE_NAME:latest .
+          # 2. Tenta baixar a imagem 'latest' para usar como cache. 
+          # O '|| true' garante que o pipeline não quebre se for a primeira vez que você roda.
+          docker pull $IMAGE_NAME:latest || true
 
-          # Push para o Docker Hub
+          # 3. Build utilizando o cache da imagem baixada
+          # Habilitamos o BUILDKIT_INLINE_CACHE para que a imagem final carregue os metadados de cache
+          docker build \
+            --build-arg BUILDKIT_INLINE_CACHE=1 \
+            --cache-from $IMAGE_NAME:latest \
+            -t $IMAGE_NAME:${{ github.sha }} \
+            -t $IMAGE_NAME:latest .
+
+          # 4. Push das versões
           docker push $IMAGE_NAME:${{ github.sha }}
           docker push $IMAGE_NAME:latest

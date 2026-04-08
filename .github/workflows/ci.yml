@@ -1,54 +1,42 @@
-name: Docker Build Workflow
-
-# Define quando o pipeline será executado
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-  workflow_dispatch: # Permite rodar manualmente
+
+permissions:
+  contents: read
+  packages: write
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest 
 
     steps:
-      # 1. Faz o checkout do código do repositório
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. Login no Docker Registry
-      # No GitHub, usamos segredos (Secrets) para manter a segurança
-      - name: Log in to Docker Registry
+      - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKER_USER }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-          # registry: ghcr.io (Opcional: use se for o Container Registry do GitHub)
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      # 3. Execução do Build
-      - name: Build Docker Image
+      - name: Build Otimizado com Cache - Acao 3
         run: |
-          echo "Simulando um docker build"
-          # docker build -t minha-imagem:latest .
-      
-      - name: Build and Push with Cache
-        run: |
-          # 1. Define o nome da imagem (ajuste 'meu-app' para o nome do seu repositório)
-          IMAGE_NAME=${{ secrets.DOCKER_USER }}/meu-app
+          # Define o nome da imagem e converte para minúsculo
+          IMAGE_ID=ghcr.io/${{ github.repository }}
+          IMAGE_ID=$(echo $IMAGE_ID | tr '[:upper:]' '[:lower:]')
 
-          # 2. Tenta baixar a imagem 'latest' para usar como cache. 
-          # O '|| true' garante que o pipeline não quebre se for a primeira vez que você roda.
-          docker pull $IMAGE_NAME:latest || true
+          # 1. Tenta baixar a imagem existente para usar como cache [cite: 116, 123]
+          docker pull $IMAGE_ID:latest || true
 
-          # 3. Build utilizando o cache da imagem baixada
-          # Habilitamos o BUILDKIT_INLINE_CACHE para que a imagem final carregue os metadados de cache
+          # 2. Build usando cache-from e BuildKit Inline Cache [cite: 118, 124, 125]
           docker build \
             --build-arg BUILDKIT_INLINE_CACHE=1 \
-            --cache-from $IMAGE_NAME:latest \
-            -t $IMAGE_NAME:${{ github.sha }} \
-            -t $IMAGE_NAME:latest .
+            --cache-from $IMAGE_ID:latest \
+            -t $IMAGE_ID:${{ github.sha }} \
+            -t $IMAGE_ID:latest .
 
-          # 4. Push das versões
-          docker push $IMAGE_NAME:${{ github.sha }}
-          docker push $IMAGE_NAME:latest
+          # 3. Push das novas imagens atualizadas [cite: 121, 122]
+          docker push $IMAGE_ID:${{ github.sha }}
+          docker push $IMAGE_ID:latest

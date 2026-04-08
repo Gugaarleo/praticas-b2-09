@@ -31,14 +31,16 @@ jobs:
         run: |
           echo "Simulando um docker build"
           # docker build -t minha-imagem:latest .
-      - name: Build and Push Docker Image
+      
+      - name: Build and Push
         run: |
-          # Definimos o nome da imagem (ajuste se usar Docker Hub em vez do GHCR)
-          IMAGE_NAME=ghcr.io/${{ github.repository }}
+          # Substitua 'seu-usuario' pelo seu login do Docker Hub ou use uma variável
+          # Aqui estamos definindo o nome da imagem seguindo o padrão do Docker Hub
+          IMAGE_NAME=${{ secrets.DOCKER_USER }}/meu-projeto-docker
 
-          # Build da imagem com as duas tags (SHA e Latest)
+          # Build com as duas tags (SHA do commit e Latest)
           docker build -t $IMAGE_NAME:${{ github.sha }} -t $IMAGE_NAME:latest .
 
-          # Push das imagens para o registro
+          # Push para o Docker Hub
           docker push $IMAGE_NAME:${{ github.sha }}
           docker push $IMAGE_NAME:latest

@@ -1,5 +1,7 @@
 # Automação de Builds e Contêineres na Nuvem
 
+TESTE
+
 Repositório base para o desenvolvimento de uma automação de build de uma imagem Docker de uma aplicação Python+Flask e implantação em um serviço na nuvem (opcional).
 
 A automação de build consiste no processo de transformar seu código-fonte em artefatos executáveis de forma automática e reproduzível. 
